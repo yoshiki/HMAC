@@ -9,45 +9,28 @@
 import CryptoEssentials
 
 final public class HMAC {
-    var key: [UInt8]
-    let variant: HashProtocol.Type
-    
-    class public func authenticate(key  key: [UInt8], message: [UInt8], variant: HashProtocol.Type) -> [UInt8] {
-        return HMAC(key, variant: variant).authenticate(message: message)
-    }
-    
-    // MARK: - Private
-    
-    public init (_ key: [UInt8], variant: HashProtocol.Type) {
-        self.variant = variant
-        self.key = key
-        
-        let hashingVariant = variant.init(key)
+    public static func authenticate(message:[Byte], withKey key: [Byte], using variant: HashProtocol.Type) -> [Byte] {
+        var key = key
         
         if (key.count > 64) {
-            self.key = hashingVariant.calculate()
+            key = variant.calculate(key)
         }
         
         if (key.count < 64) { // keys shorter than blocksize are zero-padded
-            self.key = key + [UInt8](repeating: 0, count: 64 - key.count)
+            key = key + [UInt8](repeating: 0, count: 64 - key.count)
         }
-    }
-    
-    public func authenticate(message  message:[UInt8]) -> [UInt8] {
-        var opad = [UInt8](repeating: 0x5c, count: 64)
+        
+        var opad = [Byte](repeating: 0x5c, count: 64)
         for (idx, _) in key.enumerated() {
             opad[idx] = key[idx] ^ opad[idx]
         }
-        var ipad = [UInt8](repeating: 0x36, count: 64)
+        var ipad = [Byte](repeating: 0x36, count: 64)
         for (idx, _) in key.enumerated() {
             ipad[idx] = key[idx] ^ ipad[idx]
         }
         
-        let hashingVariant = variant.init(ipad + message)
-        
-        let ipadAndMessageHash = hashingVariant.calculate()
-        let finalHashingVariant = variant.init(opad + ipadAndMessageHash)
-        let finalHash = finalHashingVariant.calculate();
+        let ipadAndMessageHash = variant.calculate(ipad + message)
+        let finalHash = variant.calculate(opad + ipadAndMessageHash);
         
         return finalHash
     }
