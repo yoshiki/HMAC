@@ -8,12 +8,12 @@
 
 import CryptoEssentials
 
-final public class HMAC {
-    public static func authenticate(message:[Byte], withKey key: [Byte], using variant: HashProtocol.Type) -> [Byte] {
+final public class HMAC<Variant: HashProtocol> {
+    public static func authenticate(message:[Byte], withKey key: [Byte]) -> [Byte] {
         var key = key
         
         if (key.count > 64) {
-            key = variant.calculate(key)
+            key = Variant.calculate(key)
         }
         
         if (key.count < 64) { // keys shorter than blocksize are zero-padded
@@ -29,8 +29,8 @@ final public class HMAC {
             ipad[idx] = key[idx] ^ ipad[idx]
         }
         
-        let ipadAndMessageHash = variant.calculate(ipad + message)
-        let finalHash = variant.calculate(opad + ipadAndMessageHash);
+        let ipadAndMessageHash = Variant.calculate(ipad + message)
+        let finalHash = Variant.calculate(opad + ipadAndMessageHash);
         
         return finalHash
     }
