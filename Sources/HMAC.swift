@@ -8,21 +8,19 @@
 
 import CryptoEssentials
 
-final public class HMAC {
+final public class HMAC<Variant: HashProtocol> {
     var key: [UInt8]
-    let variant: HashProtocol.Type
     
-    class public func authenticate(key  key: [UInt8], message: [UInt8], variant: HashProtocol.Type) -> [UInt8] {
-        return HMAC(key, variant: variant).authenticate(message: message)
+    class public func authenticate(key  key: [UInt8], message: [UInt8], variant: Variant.Type) -> [UInt8] {
+        return HMAC<Variant>(key).authenticate(message: message)
     }
     
     // MARK: - Private
     
-    public init (_ key: [UInt8], variant: HashProtocol.Type) {
-        self.variant = variant
+    public init (_ key: [UInt8]) {
         self.key = key
         
-        let hashingVariant = variant.init(key)
+        let hashingVariant = Variant(key)
         
         if (key.count > 64) {
             self.key = hashingVariant.calculate()
@@ -33,7 +31,7 @@ final public class HMAC {
         }
     }
     
-    public func authenticate(message  message:[UInt8]) -> [UInt8] {
+    public func authenticate(message message: [UInt8]) -> [UInt8] {
         var opad = [UInt8](repeating: 0x5c, count: 64)
         for (idx, _) in key.enumerated() {
             opad[idx] = key[idx] ^ opad[idx]
@@ -42,11 +40,11 @@ final public class HMAC {
         for (idx, _) in key.enumerated() {
             ipad[idx] = key[idx] ^ ipad[idx]
         }
-        
-        let hashingVariant = variant.init(ipad + message)
-        
+
+        let hashingVariant = Variant(ipad + message)
+
         let ipadAndMessageHash = hashingVariant.calculate()
-        let finalHashingVariant = variant.init(opad + ipadAndMessageHash)
+        let finalHashingVariant = Variant(opad + ipadAndMessageHash)
         let finalHash = finalHashingVariant.calculate();
         
         return finalHash
