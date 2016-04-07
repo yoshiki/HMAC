@@ -12,19 +12,19 @@ final public class HMAC<Variant: HashProtocol> {
     public static func authenticate(message:[Byte], withKey key: [Byte]) -> [Byte] {
         var key = key
         
-        if (key.count > 64) {
+        if (key.count > Variant.size) {
             key = Variant.calculate(key)
         }
         
-        if (key.count < 64) { // keys shorter than blocksize are zero-padded
-            key = key + [UInt8](repeating: 0, count: 64 - key.count)
+        if (key.count < Variant.size) { // keys shorter than blocksize are zero-padded
+            key = key + [UInt8](repeating: 0, count: Variant.size - key.count)
         }
         
-        var opad = [Byte](repeating: 0x5c, count: 64)
+        var opad = [Byte](repeating: 0x5c, count: Variant.size)
         for (idx, _) in key.enumerated() {
             opad[idx] = key[idx] ^ opad[idx]
         }
-        var ipad = [Byte](repeating: 0x36, count: 64)
+        var ipad = [Byte](repeating: 0x36, count: Variant.size)
         for (idx, _) in key.enumerated() {
             ipad[idx] = key[idx] ^ ipad[idx]
         }
